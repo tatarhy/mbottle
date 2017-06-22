@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, session
+from flask import Flask, request, session, render_template
 from rauth import OAuth1Service
 
 app = Flask(__name__)
@@ -20,8 +20,8 @@ def root():
     request_token, request_token_secret = zaim.get_request_token(params={'oauth_callback':'http://localhost:5000/callback/zaim'})
     session['request_token'] = request_token
     session['request_token_secret'] = request_token_secret
-    authorize_url = zaim.get_authorize_url(request_token)
-    return '<a href="' + authorize_url + '">zaim</a>'
+    zaim_auth_url = zaim.get_authorize_url(request_token)
+    return render_template('connect.html', zaim_auth_url=zaim_auth_url)
 
 @app.route("/callback/zaim")
 def callback_zaim():
