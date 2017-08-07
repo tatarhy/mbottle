@@ -1,52 +1,88 @@
 import os
-from flask import Flask, request, session, render_template
-from rauth import OAuth1Service
+from flask import Flask, session, render_template, url_for, g, flash, redirect
+from flask_oauthlib.client import OAuth
 
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = os.environ['MBOTTLE_SECRET_KEY']
 
-zaim = OAuth1Service(
-    name='zaimtestt1',
+oauth = OAuth()
+
+zaim = oauth.remote_app(
+    'zaim',
     consumer_key=os.environ['ZAIM_CONSUMER_KEY'],
     consumer_secret=os.environ['ZAIM_CONSUMER_SECRET'],
     request_token_url='https://api.zaim.net/v2/auth/request',
     access_token_url='https://api.zaim.net/v2/auth/access',
     authorize_url='https://auth.zaim.net/users/auth',
-    base_url='https://api.zaim.net/v2')
+    base_url='https://api.zaim.net/v2/')
+
+gmail = oauth.remote_app(
+    'gmail',
+    consumer_key=os.environ['GMAIL_CLIENT_ID'],
+    consumer_secret=os.environ['GMAIL_CLIENT_SECRET'],
+    request_token_url=None,
+    authorize_url="https://accounts.google.com/o/oauth2/auth",
+    access_token_url="https://accounts.google.com/o/oauth2/token",
+    access_token_method='POST',
+    request_token_params={'scope': 'https://www.googleapis.com/auth/gmail.readonly'},
+    base_url='https://www.googleapis.com/gmail/v1/')
+
+
+@app.before_request
+def before_request():
+    g.user = None
+    if 'zaim_token' in session:
+        g.user = session['zaim_token']
 
 
 @app.route("/")
 def root():
-    request_token, request_token_secret = zaim.get_request_token(
-        params={'oauth_callback': 'http://localhost:5000/callback/zaim'})
-    session['request_token'] = request_token
-    session['request_token_secret'] = request_token_secret
-    zaim_auth_url = zaim.get_authorize_url(request_token)
-    return render_template('connect.html', zaim_auth_url=zaim_auth_url)
+    return render_template('connect.html')
+
+
+@app.route("/connect/gmail")
+def connect_gmail():
+    callback_url = url_for('callback_gmail', _external=True)
+    return gmail.authorize(callback=callback_url)
+
+
+@app.route("/callback/gmail")
+def callback_gmail():
+    resp = gmail.authorized_response()
+    if resp is None:
+        return 'access denied'
+
+    session['gmail_token'] = resp['access_token']
+    return redirect(url_for('root'))
+
+
+@zaim.tokengetter
+def get_zaim_token():
+    return session['zaim_token']
+
+
+@app.route("/connect/zaim")
+def connect_zaim():
+    return zaim.authorize(callback=url_for('callback_zaim', _external=True))
 
 
 @app.route("/callback/zaim")
 def callback_zaim():
-    oauth_token = request.args['oauth_token']
-    oauth_verifier = request.args['oauth_verifier']
+    resp = zaim.authorized_response()
+    if resp is None:
+        flash('error')
+        return 'denied'
 
-    request_token = session['request_token']
-    request_token_secret = session['request_token_secret']
+    session['zaim_token'] = (resp['oauth_token'], resp['oauth_token_secret'])
 
-    auth_session = zaim.get_auth_session(request_token, request_token_secret, params={'oauth_verifier': oauth_verifier})
-    session['access_token'] = auth_session.access_token
-    session['access_token_secret'] = auth_session.access_token_secret
-
-    return ''
+    return redirect(url_for('root'))
 
 
 @app.route("/test")
 def test():
-    auth_session = zaim.get_session((session['access_token'], session['access_token_secret']))
-
-    r = auth_session.get('https://api.zaim.net/v2/category', params={'format': 'json'})
-    print(r.json())
+    r = zaim.get('category')
+    print(r)
 
     # return r.json()
     return ''
