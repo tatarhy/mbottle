@@ -41,6 +41,11 @@ def root():
     return render_template('connect.html')
 
 
+@gmail.tokengetter
+def get_gmail_token():
+    return session['gmail_token']
+
+
 @app.route("/connect/gmail")
 def connect_gmail():
     callback_url = url_for('callback_gmail', _external=True)
