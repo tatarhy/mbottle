@@ -58,7 +58,7 @@ def callback_gmail():
     if resp is None:
         return 'access denied'
 
-    session['gmail_token'] = resp['access_token']
+    session['gmail_token'] = (resp['access_token'], '')
     return redirect(url_for('root'))
 
 
