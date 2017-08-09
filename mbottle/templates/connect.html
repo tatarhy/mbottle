@@ -6,15 +6,15 @@
 </head>
 <body>
 {% if session['zaim_token'] %}
-<span>Zaim</span>
+<a href="{{ url_for('disconnect_zaim') }}">Zaim Connected</a>
 {% else %}
-<a href="{{ url_for('connect_zaim') }}">Zaim</a>
+<a href="{{ url_for('connect_zaim') }}">Connect Zaim</a>
 {% endif %}
 
 {% if session['gmail_token'] %}
-<span>Gmail</span>
+<a href="{{ url_for('disconnect_gmail') }}">Gmail Connected</a>
 {% else %}
-<a href="{{ url_for('connect_gmail') }}">Gmail</a>
+<a href="{{ url_for('connect_gmail') }}">Connect Gmail</a>
 {% endif %}
 </body>
 </html>

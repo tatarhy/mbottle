@@ -52,6 +52,12 @@ def connect_gmail():
     return gmail.authorize(callback=callback_url)
 
 
+@app.route("/disconnect/gmail")
+def disconnect_gmail():
+    session.pop('gmail_token')
+    return redirect(url_for('root'))
+
+
 @app.route("/callback/gmail")
 def callback_gmail():
     resp = gmail.authorized_response()
@@ -70,6 +76,12 @@ def get_zaim_token():
 @app.route("/connect/zaim")
 def connect_zaim():
     return zaim.authorize(callback=url_for('callback_zaim', _external=True))
+
+
+@app.route("/disconnect/zaim")
+def disconnect_zaim():
+    session.pop('zaim_token')
+    return redirect(url_for('root'))
 
 
 @app.route("/callback/zaim")
