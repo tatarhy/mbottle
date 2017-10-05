@@ -1,5 +1,6 @@
+import base64
 import os
-from flask import Flask, session, render_template, url_for, g, flash, redirect
+from flask import Flask, session, render_template, url_for, g, flash, redirect, jsonify
 from flask_oauthlib.client import OAuth
 
 app = Flask(__name__)
@@ -96,13 +97,27 @@ def callback_zaim():
     return redirect(url_for('root'))
 
 
-@app.route("/test")
-def test():
-    r = zaim.get('category')
-    print(r)
+@app.route("/messages")
+def messages():
+    messages = gmail.get('users/me/messages')
+    return render_template('messages.html', messages=messages.data)
 
-    # return r.json()
-    return ''
+
+@app.route("/messages/<id>")
+def message_body(id):
+    mes = gmail.get('users/me/messages/'+id)
+    z = mes.data['payload']
+    if z['mimeType'] == 'multipart/alternative':
+        p = ''.join([i['body']['data'].rstrip() for i in z['parts'] if i['mimeType'] == 'text/html'])
+        pp = base64.urlsafe_b64decode(p)
+    return pp
+
+
+@app.route("/messages/<id>.json")
+def message_json(id):
+    mes = gmail.get('users/me/messages/'+id)
+    z = mes.data
+    return jsonify(z)
 
 
 if __name__ == "__main__":

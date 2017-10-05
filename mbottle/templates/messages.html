@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<div>
+    <ul>
+    {% for m in messages.messages %}
+    <li>{{ m.id }} [<a href="{{ url_for('message_body', id=m.id) }}">page</a>] [<a href="{{ url_for('message_json', id=m.id) }}">json</a>]</li>
+    {% endfor %}
+    </ul>
+</div>
+
+</body>
+</html>
